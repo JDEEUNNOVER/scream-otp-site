@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scream OTP – Live Call Script Tool</title>
+  <style>
+    /* ------------- Theme variables ------------- */
+    :root{
+      --main-green:#04C45C;
+      --main-green-dark:#03a14a;
+      --panel-dark:#0C1417;
+    }
+
+    /* ------------- Base styles ------------- */
+    *{box-sizing:border-box;}
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      padding:40px;
+      background:#1c1c1c;
+      color:#f0f0f0;
+      transition:background .5s,color .5s;
+    }
+    .container{
+      max-width:900px;
+      margin:auto;
+      background:var(--panel-dark);
+      border-radius:15px;
+      padding:30px;
+      box-shadow:0 0 25px rgba(0,0,0,.5);
+    }
+    h2{margin:10px 0 5px;color:#fff;font-size:28px;text-align:center;}
+
+    /* ------------- Glowing inputs ------------- */
+    textarea,input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      font-size:16px;
+      border:none;
+      border-radius:10px;
+      background:#fff;
+      color:#000;
+      box-shadow:0 0 8px rgba(4,196,92,.4),inset 0 0 5px rgba(0,0,0,.3);
+      transition:box-shadow .3s;
+    }
+    textarea:focus,input:focus{
+      outline:none;
+      box-shadow:0 0 15px rgba(4,196,92,.8),inset 0 0 5px rgba(0,0,0,.4);
+    }
+    textarea{min-height:180px;resize:vertical;}
+
+    /* ------------- Tabs ------------- */
+    .tabs{display:flex;margin-bottom:15px;}
+    .tab-btn{
+      flex:1;
+      padding:10px;
+      cursor:pointer;
+      background:#222;
+      color:#ccc;
+      border:none;
+      border-bottom:3px solid transparent;
+      transition:background .3s;
+      text-align:center;
+    }
+    .tab-btn.active{
+      background:#333;
+      color:#fff;
+      border-bottom-color:var(--main-green);
+    }
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+
+    /* ------------- Buttons ------------- */
+    .btn-group{margin:20px 0;text-align:center;}
+    .btn-group button,
+    .top-toolbar button{
+      padding:12px 20px;
+      font-size:16px;
+      margin:0 10px 10px;
+      border:none;
+      border-radius:8px;
+      background:var(--main-green);
+      color:#fff;
+      cursor:pointer;
+      transition:background .3s,transform .3s,box-shadow .3s;
+      box-shadow:0 0 10px rgba(4,196,92,.5);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .btn-group button:hover,
+    .top-toolbar button:hover{
+      background:var(--main-green-dark);
+      transform:scale(1.05);
+      box-shadow:0 0 15px rgba(4,196,92,.9);
+    }
+
+    /* ------------- Result box ------------- */
+    #scriptBox{
+      background:#fff;
+      color:#000;
+      border-radius:10px;
+      padding:15px;
+      white-space:pre-wrap;
+      min-height:200px;
+      box-shadow:inset 0 0 5px rgba(0,0,0,.3),0 0 10px rgba(4,196,92,.4);
+    }
+
+    /* ------------- Dark‑mode tweaks ------------- */
+    .dark-mode{background:#000;color:#f0f0f0;}
+    .dark-mode .container{background:#111;}
+    .dark-mode textarea,
+    .dark-mode input,
+    .dark-mode #scriptBox{background:#333;color:#f0f0f0;}
+
+    /* ------------- Toolbar ------------- */
+    .top-toolbar{
+      position:fixed;
+      top:20px;
+      right:40px;
+      background:#111;
+      border-radius:12px;
+      padding:6px 10px;
+      display:flex;
+      gap:10px;
+      z-index:1000;
+      box-shadow:0 0 10px rgba(4,196,92,.4);
+    }
+
+    /* ------------- Guide panel ------------- */
+    .guide-panel{
+      position:fixed;
+      top:70px;
+      right:40px;
+      width:350px;
+      max-width:90%;
+      background:#fff;
+      color:#000;
+      padding:25px;
+      border-radius:15px;
+      box-shadow:0 0 25px rgba(0,0,0,.6);
+      z-index:9999;
+      transition:opacity .4s;
+      opacity:0;
+      display:none;
+    }
+    .guide-panel.open{display:block;opacity:1;}
+    .dark-mode .guide-panel{background:#222;color:#eee;}
+    .guide-close{
+      margin-top:15px;
+      background:#999;
+      color:#fff;
+      border:none;
+      padding:8px 12px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    .guide-close:hover{background:#777;}
+
+    /* ------------- Generated‑prefix label ------------- */
+    .generated-label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:20px 0 6px;
+      font-weight:600;
+      color:var(--main-green);
+      text-shadow:0 0 6px rgba(4,196,92,.7);
+      user-select:none;
+    }
+    .generated-label::before{
+      content:"\279C"; /* heavy rightwards arrow */
+      font-size:20px;
+      animation:nudge 1s infinite alternate ease-in-out;
+    }
+    .generated-label .tag{
+      font-size:11px;
+      text-transform:uppercase;
+      background:#222;
+      color:#fff;
+      padding:2px 6px;
+      border-radius:4px;
+      letter-spacing:.5px;
+      box-shadow:0 0 6px rgba(4,196,92,.6);
+    }
+    @keyframes nudge{
+      from{transform:translateX(-2px);}
+      to  {transform:translateX(2px);}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top toolbar -->
+  <div class="top-toolbar">
+    <button class="guide-toggle" onclick="toggleGuide()">📘 <span>Guide</span></button>
+    <button class="dark-toggle" onclick="toggleDarkMode()">🌙 <span>Dark&nbsp;Mode</span></button>
+  </div>
+
+  <!-- Guide panel -->
+  <div id="guidePanel" class="guide-panel">
+    <h2>📘 Script Tool Guide</h2>
+    <p><strong>Creating &amp; Using Scripts</strong></p>
+    <ol>
+      <li>Select <em>Default Script</em> or <em>Custom Script</em>.</li>
+      <li>Use <strong>placeholders</strong> like <code>{clientName}</code>, <code>{amount}</code>.</li>
+      <li>Fill in the input fields beneath the editor.</li>
+      <li>Click <strong>Fill In Script</strong> to generate the script with your data.</li>
+    </ol>
+    <p><strong>Saving Custom Scripts</strong></p>
+    <ul>
+      <li>In the <em>Custom Script</em> tab, write your script.</li>
+      <li>Click <strong>💾 Save Custom Script</strong>.</li>
+      <li>Your script is saved in your browser and will reload next time.</li>
+    </ul>
+    <button class="guide-close" onclick="toggleGuide()">Close</button>
+  </div>
+
+  <div class="container">
+    <header style="text-align:center;margin-bottom:30px;">
+      <img src="logo_blended_true_dark.png" alt="Logo" style="width:280px;border-radius:20px;">
+      <h2>📄 Live Call Script Replacer</h2>
+      <div style="font-size:14px;color:#999;">made by @JDEEISBACK</div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="default">Default Script</button>
+      <button class="tab-btn" data-tab="custom">Custom Script</button>
+    </div>
+
+    <!-- Tab panes -->
+    <div id="default" class="tab-content active">
+      <textarea id="scriptInputDefault">
+Good afternoon. This is Erik Smith phoning from the {bankName} fraud prevention team. Am I through to {clientName}?
+
+Good morning. Today I’m calling regarding your debit card ending in {cardEnding}. The reason for the call is an attempted purchase made online that we don’t believe was you, so we’re giving you a quick call just to be certain.
+
+Can I just ask whether you have attempted to make any purchases online today?
+
+(Victim replies yes or no)
+
+No problem. The attempted purchase was to the website {website} for {amount}. Would this have been you?
+
+(Victim replies no)
+
+Don’t worry, the money won’t have left your account. It is currently on a pending hold.
+
+You will receive a 6-digit code from us. This will be sent via text message from {bankName}.
+
+The reference number on this message is: {otpCode}.
+
+This reference message is there to prove you’re speaking to a real {bankName} operator.
+      </textarea>
+    </div>
+
+    <div id="custom" class="tab-content">
+      <textarea id="scriptInputCustom" placeholder="Write or paste your custom script here..."></textarea>
+      <button style="margin-top:10px" onclick="saveCustomScript()">💾 Save Custom Script</button>
+    </div>
+
+    <!-- Fixed inputs -->
+    <input id="clientName" placeholder="Client Name (e.g. John McGinley)">
+    <input id="cardEnding" placeholder="Card Ending (e.g. 0224)">
+    <input id="website" placeholder="Website (e.g. Footlocker)">
+    <input id="amount" placeholder="Amount (e.g. £430)">
+    <input id="bankName" placeholder="Bank Name (e.g. Lloyds)">
+    <div id="dynamicInputs" style="margin-top:10px;"></div>
+    <input id="otpCode" placeholder="Reference/OTP Code (e.g. 123456)">
+
+    <!-- Action buttons -->
+    <div class="btn-group">
+      <button onclick="replaceScript()">Fill In Script</button>
+      <button onclick="copyScript()">Copy to Clipboard</button>
+      <button onclick="downloadScript()">Download as .txt</button>
+      <button onclick="resetAll()">Reset</button>
+    </div>
+
+    <!-- Result -->
+    <h3 style="color:#ccc;">📜 Result:</h3>
+    <div id="scriptBox"></div>
+  </div>
+
+<script>
+  /* ------------ Dark mode ------------ */
+  function toggleDarkMode(){
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode',document.body.classList.contains('dark-mode'));
+  }
+  if(localStorage.getItem('darkMode')==='true')document.body.classList.add('dark-mode');
+
+  /* ------------ Guide ------------ */
+  function toggleGuide(){
+    document.getElementById('guidePanel').classList.toggle('open');
+  }
+
+  /* ------------ Tabs ------------ */
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+      localStorage.setItem('activeTab',btn.dataset.tab);
+      generateInputs(); // refresh dynamic inputs on tab switch
+    });
+  });
+  const savedTab = localStorage.getItem('activeTab');
+  if(savedTab && savedTab!=='default'){
+    document.querySelector(`.tab-btn[data-tab="${savedTab}"]`).click();
+  }
+
+  /* ------------ Custom script persistence ------------ */
+  const customArea = document.getElementById('scriptInputCustom');
+  if(localStorage.getItem('customScript'))customArea.value = localStorage.getItem('customScript');
+  function saveCustomScript(){
+    localStorage.setItem('customScript',customArea.value);
+    alert('Custom script saved locally!');
+  }
+
+  /* ------------ Helpers ------------ */
+  function extractPlaceholders(text){
+    return [...new Set((text.match(/{(.*?)}/g)||[]).map(s=>s.slice(1,-1)))];
+  }
+
+  /* ------------ Dynamic input generator (with experimental label) ------------ */
+  function generateInputs(){
+    const textarea = document.querySelector('.tab-content.active textarea');
+    const template = textarea?.value||'';
+    const keys = extractPlaceholders(template);
+    const dynBox = document.getElementById('dynamicInputs');
+    dynBox.innerHTML='';
+
+    // Identify keys that don't already have fixed inputs
+    const newKeys = keys.filter(k=>!document.getElementById(k));
+
+    if(newKeys.length){
+      dynBox.insertAdjacentHTML('afterbegin',
+        '<div class="generated-label">Generated&nbsp;Prefixes&nbsp;<span class="tag">Experimental</span></div>'
+      );
+    }
+
+    newKeys.forEach(k=>{
+      const inp=document.createElement('input');
+      inp.id=k;
+      inp.placeholder=k;
+      inp.style.width='100%';
+      inp.style.padding='10px';
+      inp.style.margin='8px 0';
+      inp.style.fontSize='15px';
+      inp.style.borderRadius='10px';
+      inp.style.border='none';
+      inp.style.boxShadow='inset 0 0 5px rgba(0,0,0,.3)';
+      dynBox.appendChild(inp);
+    });
+  }
+
+  /* ------------ Script replacement ------------ */
+  function getTemplate(){
+    const activeTab=document.querySelector('.tab-btn.active').dataset.tab;
+    return activeTab==='default'?document.getElementById('scriptInputDefault').value:customArea.value;
+  }
+  function replaceScript(){
+    let template=getTemplate();
+    const keys=extractPlaceholders(template);
+    const values={};
+    keys.forEach(k=>{
+      const el=document.getElementById(k);
+      values[k]=el?el.value.trim():'';
+    });
+
+    // Remove OTP block if otpCode is empty
+    if(!values['otpCode']){
+      template = template.replace(/The reference number on this message is: .*?\n?/gi,'');
+      template = template.replace(/This reference message is there to prove.*?operator\.\n?/gi,'');
+    }
+
+    keys.forEach(k=>{
+      template=template.replaceAll('{'+k+'}',values[k]);
+    });
+
+    document.getElementById('scriptBox').innerText=template.trim();
+  }
+
+  /* ------------ Utilities ------------ */
+  function copyScript(){
+    const text=document.getElementById('scriptBox').innerText;
+    if(!text)return alert('No script to copy.');
+    navigator.clipboard.writeText(text).then(()=>alert('✅ Copied!'));
+  }
+  function downloadScript(){
+    const text=document.getElementById('scriptBox').innerText;
+    if(!text)return alert('No script to download.');
+    const blob=new Blob([text],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='filled_script.txt';a.click();
+    URL.revokeObjectURL(url);
+  }
+  function resetAll(){
+    document.querySelectorAll('input').forEach(el=>el.value='');
+    document.getElementById('scriptBox').innerText='';
+    generateInputs();
+  }
+
+  /* ------------ Init ------------ */
+  window.addEventListener('DOMContentLoaded',generateInputs);
+  document.querySelectorAll('.tab-content textarea').forEach(t=>t.addEventListener('input',generateInputs));
+</script>
+</body>
+</html>
